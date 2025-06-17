@@ -1,9 +1,17 @@
 <template>
   <div>
     <h1>Chat App</h1>
-    <div>
-      <span>Room ID:</span>
-      <input v-model="roomId" type="text" placeholder="Enter room ID..." />
+    <div class="register_form">
+      <div>
+        <span>Room ID:</span>
+        <input v-model="roomId" type="text" placeholder="Enter room ID..." />
+      </div>
+
+      <div>
+        <span>Your Name:</span>
+        <input v-model="userName" type="text" placeholder="Enter your name..." />
+      </div>
+
       <button
         :disabled="isEmpty(roomId) ? true : false"
         class="btn btn-primary"
@@ -13,7 +21,9 @@
       </button>
     </div>
 
-    <div>
+    <br>
+
+    <div style="display: flex; justify-content: center;">
       <input v-model="message" type="text" placeholder="Type your message here..." />
       <button
         :disabled="!isEmpty(roomId) ? false : true"
@@ -42,10 +52,12 @@ import moment from 'moment'
 import { io } from 'socket.io-client'
 import { isEmpty } from './shared/helper/common.helper'
 
-const message = ref('')
-const messageData = ref<ChatMessageDto[]>([])
-let socket: ReturnType<typeof io> | null = null
-const roomId = ref<string>()
+const message = ref('');
+const messageData = ref<ChatMessageDto[]>([]);
+let socket: ReturnType<typeof io> | null = null;
+const roomId = ref<string>();
+let oldRoomId: string | undefined = undefined;
+const userName = ref<string>('User');
 
 function sendMessage() {
   if (!socket) {
@@ -55,11 +67,11 @@ function sendMessage() {
   const newMessage: ChatMessageDto = {
     id: moment().format('DDMMYYYYHHmmss'),
     content: message.value,
-    sender: 'User',
+    sender: userName.value || 'User',
     timestamp: moment().format('DD/MM/YYYY HH:mm'),
   }
-  messageData.value.push(newMessage)
-  socket.emit('messageToServer', { roomId: roomId.value, message: message.value })
+  // messageData.value.push(newMessage)
+  socket.emit('messageToServer', { roomId: roomId.value, messageData: newMessage })
   message.value = ''
 }
 
@@ -77,8 +89,17 @@ function joinRoom() {
   if (!socket || isEmpty(roomId.value)) {
     return
   }
+
+  if (oldRoomId && oldRoomId != roomId.value){
+    console.log('Leaving old room:', oldRoomId)
+    socket.emit('leaveRoom', { roomId: oldRoomId })
+  } else if (oldRoomId && oldRoomId == roomId.value) {
+    console.log('Already in the room:', roomId.value)
+    return
+  }
   console.log('Joining room:', roomId.value)
   socket.emit('joinRoom', { roomId: roomId.value })
+  oldRoomId = roomId.value;
 
   messageData.value = []
 }
@@ -110,13 +131,14 @@ function setupEventListeners() {
     console.log('Failed to reconnect')
   })
 
-  socket.on('chatMessage', (msg: string) => {
-    console.log('Message from server:', msg)
+  socket.on('chatMessage', ({sender, data}: {sender: string, data: ChatMessageDto}) => {
+    console.log('Message from server:', data)
+    console.log('Sender:', sender)
     messageData.value.push({
       id: '',
-      content: msg,
-      sender: 'SERVER',
-      timestamp: moment().format('DD/MM/YYYY HH:mm'),
+      content: data.content,
+      sender: data.sender,
+      timestamp: data.timestamp,
     })
   })
 
