@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
+    <div class="">
       <div>
         <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Join Room
@@ -10,9 +10,7 @@
     </div>
 
     <div class="container mx-auto px-4 py-8">
-      <div class="max-w-md mx-auto">
-        
-        <!-- Join Room Form -->
+      <div class="max-w-md mx-auto">        
         <UCard class="shadow-xl border-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
           <template #header>
             <div class="flex items-center space-x-2">
